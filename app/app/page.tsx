@@ -7,7 +7,7 @@ import { PublicFooter } from '@/components/public-footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Baby, Stethoscope, Shield, Phone, MessageCircle, MapPin, Clock, CircleCheck as CheckCircle2, Award, BookOpen, Users } from 'lucide-react';
+import { Heart, Baby, Stethoscope, Shield, Phone, MessageCircle, MapPin, Clock, CircleCheck as CheckCircle2, Award, BookOpen, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/lib/database.types';
 import Image from 'next/image';
@@ -18,6 +18,17 @@ type Sucursal = Database['public']['Tables']['sucursales']['Row'];
 export default function HomePage() {
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
+
+  const doctorImages = ['/images/doctora.jpeg', '/images/doctora2.jpeg'];
+  const [currentImage, setCurrentImage] = useState(0);
+
+  const nextImage = () => {
+    setCurrentImage((prev) => (prev + 1) % doctorImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImage((prev) => (prev - 1 + doctorImages.length) % doctorImages.length);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -125,24 +136,57 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="relative h-[500px] w-full rounded-2xl overflow-hidden shadow-lg border border-gray-100">
-            <Image
-              src="/images/doctora.jpg"
-              alt="Dra. Luisa Nohemí Pérez"
-              fill
-              className="object-contain bg-white"
-              priority
-            />
-          </div>
+          <div className="relative h-[500px] w-full rounded-2xl overflow-hidden shadow-lg border border-gray-100 bg-white">
+              <Image
+                src={doctorImages[currentImage]}
+                alt={`Dra. Luisa Nohemí Pérez ${currentImage + 1}`}
+                fill
+                className="object-contain bg-white transition-opacity duration-500"
+                priority
+              />
+
+              <button
+                type="button"
+                onClick={prevImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-2 shadow-md transition"
+                aria-label="Imagen anterior"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={nextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-2 shadow-md transition"
+                aria-label="Siguiente imagen"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {doctorImages.map((_, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setCurrentImage(index)}
+                    className={`h-2.5 w-2.5 rounded-full transition ${
+                      currentImage === index ? 'bg-blue-500' : 'bg-white/70'
+                    }`}
+                    aria-label={`Ir a imagen ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
 
             <div className="space-y-6">
               <h3 className="text-3xl font-bold text-gray-900">
                 Dra. Luisa Nohemí Pérez
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
-                Médica y Cirujana graduada con especialización en Pediatría. Con más de 10 años
-                de experiencia en el cuidado de la salud infantil, me apasiona brindar atención
-                médica de calidad con calidez humana.
+                Médica y cirujana  graduada de la  Universidad de San Carlos de Guatemala, cuento 
+                con una Maestría en Ciencias Médicas con Especialidad en Pediatría,  así como una 
+                especialidad en  Asesoría  de  Lactancia  Materna.   Cuento con más de 10 años de 
+                experiencia profesional en el cuidado de la salud de los más pequeñitos del hogar
               </p>
 
               <div className="space-y-3">
@@ -187,8 +231,8 @@ export default function HomePage() {
                     <Users className="h-5 w-5 text-teal-600 flex-shrink-0" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 text-lg">👨‍👩‍👧‍👦 Filosofía de Atención</h4>
-                    <p className="text-gray-600">
+                    <h4 className="font-semibold text-gray-900 text-base">Filosofía de Atención</h4>
+                    <p className="text-gray-600 text-sm" >
                       Trabajo en equipo con los padres para el bienestar integral de los niños
                     </p>
                   </div>
