@@ -24,6 +24,8 @@ export default function AgendarPage() {
   const router = useRouter();
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
+  const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
+  const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     sucursal_id: '',
@@ -34,8 +36,17 @@ export default function AgendarPage() {
     responsable_telefono: '',
     fecha: '',
     hora: '',
+    direccion_domicilio: '',
     observaciones: '',
   });
+
+  const sucursalSeleccionada = sucursales.find(
+  (sucursal) => sucursal.id === formData.sucursal_id
+);
+
+const esCitaDomicilio =
+  sucursalSeleccionada?.nombre?.toLowerCase() === 'cita a domicilio';
+
 
   useEffect(() => {
     async function loadData() {
@@ -57,20 +68,69 @@ export default function AgendarPage() {
     loadData();
   }, []);
 
-  const generateTimeSlots = () => {
-    const slots = [];
-    const today = new Date(formData.fecha);
-    const dayOfWeek = today.getDay();
+  useEffect(() => {
+    async function cargarHorariosDisponibles() {
+      if (!formData.sucursal_id || !formData.fecha) {
+        setHorariosDisponibles([]);
+        return;
+      }
 
-    const startHour = 7;
-    const endHour = dayOfWeek === 6 ? 12 : 16;
+      setLoadingHorarios(true);
 
-    for (let hour = startHour; hour < endHour; hour++) {
-      slots.push(`${hour.toString().padStart(2, '0')}:00`);
+      const { data, error } = await (supabase as any).rpc('obtener_horarios_disponibles', {
+        p_sucursal_id: formData.sucursal_id,
+        p_fecha: formData.fecha,
+      });
+
+      if (error) {
+        console.error('Error cargando horarios:', error);
+        toast.error('No se pudieron cargar los horarios disponibles');
+        setHorariosDisponibles([]);
+      } else {
+        setHorariosDisponibles((data || []).map((item: any) => item.hora));
+      }
+
+      setLoadingHorarios(false);
     }
 
-    return slots;
-  };
+    cargarHorariosDisponibles();
+  }, [formData.sucursal_id, formData.fecha]);
+
+  
+  const generarGoogleCalendarUrl = ({
+  titulo,
+  fecha,
+  horaInicio,
+  horaFin,
+  ubicacion,
+  descripcion,
+}: {
+  titulo: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  ubicacion: string;
+  descripcion: string;
+}) => {
+  const limpiarFechaHora = (hora: string) =>
+    `${fecha.replace(/-/g, '')}T${hora.replace(':', '')}00`;
+
+  const start = limpiarFechaHora(horaInicio);
+  const end = limpiarFechaHora(horaFin);
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: titulo,
+    dates: `${start}/${end}`,
+    details: descripcion,
+    location: ubicacion,
+    ctz: 'America/Guatemala',
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,12 +173,39 @@ export default function AgendarPage() {
 
       if (patientError) throw patientError;
 
-      const horaFin = parseInt(formData.hora.split(':')[0]) + 1;
-      const horaFinStr = `${horaFin.toString().padStart(2, '0')}:00`;
+      if (!horariosDisponibles.includes(formData.hora)) {
+        toast.error('Horario no disponible', {
+          description: 'Ese horario ya no está disponible. Seleccione otro.',
+        });
+        setLoading(false);
+        return;
+      }
+
+      const [hora, minuto] = formData.hora.split(':').map(Number);
+      const fechaHora = new Date(2000, 0, 1, hora, minuto);
+
+      fechaHora.setHours(fechaHora.getHours() + 1);
+
+      const horaFinStr = `${fechaHora
+        .getHours()
+        .toString()
+        .padStart(2, '0')}:${fechaHora
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}`;
+
+    if (esCitaDomicilio && !formData.direccion_domicilio.trim()) {
+      toast.error('Dirección requerida', {
+        description: 'Debe ingresar la dirección para la cita a domicilio.',
+      });
+      setLoading(false);
+      return;
+    }
 
       const { error: appointmentError } = await supabase
         .from('citas')
         .insert([{
+     
           paciente_id: (newPatient as any).id,
           responsable_id: responsableId,
           sucursal_id: formData.sucursal_id,
@@ -127,14 +214,41 @@ export default function AgendarPage() {
           hora_inicio: formData.hora,
           hora_fin: horaFinStr,
           estado: 'pendiente',
-          observaciones: formData.observaciones || null,
+          observaciones: esCitaDomicilio
+            ? [
+                'CITA A DOMICILIO - SUJETO A APROBACIÓN',
+                `Dirección: ${formData.direccion_domicilio}`,
+                formData.observaciones ? `Observaciones: ${formData.observaciones}` : null,
+              ]
+                .filter(Boolean)
+                .join('\n')
+            : formData.observaciones || null,
         }] as any);
 
-      if (appointmentError) throw appointmentError;
+      const servicioSeleccionado = servicios.find(
+        (servicio) => servicio.id === formData.servicio_id
+      );
+
+      const googleCalendarUrl = generarGoogleCalendarUrl({
+        titulo: `Cita pediátrica - ${servicioSeleccionado?.nombre || 'Consulta'}`,
+        fecha: formData.fecha,
+        horaInicio: formData.hora,
+        horaFin: horaFinStr,
+        ubicacion: esCitaDomicilio
+          ? formData.direccion_domicilio
+          : sucursalSeleccionada?.direccion || 'Clínica pediátrica',
+        descripcion: esCitaDomicilio
+          ? `Cita a domicilio sujeta a aprobación.\nPaciente: ${formData.paciente_nombre}`
+          : `Cita pediátrica.\nPaciente: ${formData.paciente_nombre}`,
+      });
 
       toast.success('Cita agendada exitosamente', {
-        description: 'Nos pondremos en contacto para confirmar su cita.',
+        description: 'Se abrirá Google Calendar para que puedas agregarla.',
       });
+
+      window.open(googleCalendarUrl, '_blank');
+
+     
 
       setTimeout(() => {
         router.push('/');
@@ -183,8 +297,13 @@ export default function AgendarPage() {
                   <Select
                     value={formData.sucursal_id}
                     onValueChange={(value) =>
-                      setFormData({ ...formData, sucursal_id: value })
-                    }
+                    setFormData({
+                      ...formData,
+                      sucursal_id: value,
+                      hora: '',
+                      direccion_domicilio: '',
+                    })
+                  }
                     required
                   >
                     <SelectTrigger>
@@ -225,6 +344,44 @@ export default function AgendarPage() {
                   </Select>
                 </div>
               </div>
+
+              {esCitaDomicilio && (
+                <div className="border-t border-gray-100 pt-6 mt-6">
+                  <h3 className="font-semibold text-lg text-gray-900 mb-4 flex items-center">
+                    <div className="bg-amber-50 p-2 rounded-lg mr-2">
+                      <MapPin className="h-5 w-5 text-amber-600" />
+                    </div>
+                    Dirección de la Cita a Domicilio
+                  </h3>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="direccion_domicilio" className="text-gray-700">
+                      Dirección completa
+                    </Label>
+                    <Textarea
+                      id="direccion_domicilio"
+                      className="border-gray-200"
+                      value={formData.direccion_domicilio}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          direccion_domicilio: e.target.value,
+                        })
+                      }
+                      required={esCitaDomicilio}
+                      placeholder="Ej: Colonia, zona, casa, referencias, municipio..."
+                      rows={3}
+                    />
+                  </div>
+
+                  <Alert className="mt-4 bg-amber-50 border border-amber-200">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-800 text-sm">
+                      <strong>Importante:</strong> Las citas a domicilio están sujetas a aprobación.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
 
               <div className="border-t border-gray-100 pt-6 mt-6">
                 <h3 className="font-semibold text-lg text-gray-900 mb-4 flex items-center">
@@ -343,17 +500,30 @@ export default function AgendarPage() {
                         setFormData({ ...formData, hora: value })
                       }
                       required
-                      disabled={!formData.fecha}
+                      disabled={!formData.fecha || !formData.sucursal_id || loadingHorarios}
                     >
                       <SelectTrigger className="border-gray-200">
-                        <SelectValue placeholder="Seleccione una hora" />
+                        <SelectValue
+                          placeholder={
+                            loadingHorarios
+                              ? 'Cargando horarios...'
+                              : 'Seleccione una hora'
+                          }
+                        />
                       </SelectTrigger>
+
                       <SelectContent>
-                        {generateTimeSlots().map((slot) => (
-                          <SelectItem key={slot} value={slot}>
-                            {slot}
+                        {horariosDisponibles.length > 0 ? (
+                          horariosDisponibles.map((slot) => (
+                            <SelectItem key={slot} value={slot}>
+                              {slot}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="sin-horarios" disabled>
+                            No hay horarios disponibles
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -362,7 +532,7 @@ export default function AgendarPage() {
                 <Alert className="mt-4 bg-blue-50 border border-blue-200">
                   <AlertCircle className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-800 text-sm">
-                    <strong>Horarios de atención:</strong> Lunes a Viernes 7:00 AM - 4:00 PM, Sábados 7:00 AM - 12:00 PM
+                    <strong>Horarios de atención:</strong> Lunes a Viernes 7:00 AM - 4:00 PM, Sábados 7:00 AM - 12:00 PM, fuera de ese horario se tomarán como emergencia.
                   </AlertDescription>
                 </Alert>
               </div>

@@ -7,13 +7,80 @@ import { PublicFooter } from '@/components/public-footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Baby, Stethoscope, Shield, Phone, MessageCircle, MapPin, Clock, CircleCheck as CheckCircle2, Award, BookOpen, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, Baby, Stethoscope, Shield, Phone, MessageCircle, MapPin, Clock, CircleCheck as CheckCircle2, Award, BookOpen, Users, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/lib/database.types';
 import Image from 'next/image';
 
 type Servicio = Database['public']['Tables']['servicios']['Row'];
 type Sucursal = Database['public']['Tables']['sucursales']['Row'];
+
+
+function ElephantDecoration({
+  className = '',
+  size = 120,
+  flip = false,
+}: {
+  className?: string;
+  size?: number;
+  flip?: boolean;
+}) {
+  return (
+    <div
+      className={`pointer-events-none absolute opacity-90 ${className}`}
+      style={{
+        width: size,
+        height: size,
+        transform: flip ? 'scaleX(-1)' : undefined,
+      }}
+      aria-hidden="true"
+    >
+      <svg
+        viewBox="0 0 200 200"
+        className="w-full h-full drop-shadow-md"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Orejas */}
+        <circle cx="70" cy="92" r="34" fill="#93C5FD" />
+        <circle cx="128" cy="92" r="34" fill="#93C5FD" />
+
+        {/* Cabeza */}
+        <circle cx="100" cy="95" r="38" fill="#BFDBFE" />
+
+        {/* Trompa */}
+        <path
+          d="M94 118C94 118 88 135 95 151C101 164 117 164 120 151C122 142 117 137 112 138C106 140 106 148 111 151"
+          stroke="#BFDBFE"
+          strokeWidth="14"
+          strokeLinecap="round"
+        />
+
+        {/* Ojos */}
+        <circle cx="88" cy="92" r="4" fill="#1F2937" />
+        <circle cx="112" cy="92" r="4" fill="#1F2937" />
+
+        {/* Mejillas */}
+        <circle cx="80" cy="106" r="5" fill="#F9A8D4" opacity="0.8" />
+        <circle cx="120" cy="106" r="5" fill="#F9A8D4" opacity="0.8" />
+
+        {/* Sombrerito médico */}
+        <rect x="78" y="42" width="44" height="18" rx="6" fill="#FFFFFF" />
+        <rect x="95" y="46" width="10" height="10" rx="2" fill="#60A5FA" />
+        <rect x="91" y="50" width="18" height="2.5" rx="1.25" fill="#60A5FA" />
+        <rect x="98" y="43" width="2.5" height="16" rx="1.25" fill="#60A5FA" />
+
+        {/* Corazoncito */}
+        <path
+          d="M146 55C146 49 151 45 156 45C160 45 163 47 165 50C167 47 170 45 174 45C179 45 184 49 184 55C184 66 165 78 165 78C165 78 146 66 146 55Z"
+          fill="#F472B6"
+        />
+      </svg>
+    </div>
+  );
+}
+
+
 
 export default function HomePage() {
   const [servicios, setServicios] = useState<Servicio[]>([]);
@@ -50,11 +117,16 @@ export default function HomePage() {
     loadData();
   }, []);
 
+  
+
   return (
     <div className="min-h-screen fun-pattern">
       <PublicNav />
 
-      <section className="relative overflow-hidden py-20 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+<section className="relative overflow-hidden py-20 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+  <ElephantDecoration className="top-8 left-4 md:left-10" size={95} />
+  <ElephantDecoration className="bottom-6 right-4 md:right-12" size={110} flip />
+  <ElephantDecoration className="top-20 right-[42%] hidden xl:block" size={70} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
@@ -81,6 +153,20 @@ export default function HomePage() {
                   <Button size="lg" variant="outline" className="border-2 border-green-500 text-green-600 hover:bg-green-50 font-medium w-full sm:w-auto text-base rounded-lg px-8">
                     <MessageCircle className="mr-2 h-5 w-5" />
                     WhatsApp
+                  </Button>
+                </a>
+                <a
+                  href="https://www.doctoranytime.gt/d/pediatra/luisa-perez"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-2 border-blue-400 text-blue-600 hover:bg-blue-50 font-medium w-full sm:w-auto text-base rounded-lg px-8"
+                  >
+                    <ExternalLink className="mr-2 h-5 w-5" />
+                    Ver perfil médico
                   </Button>
                 </a>
               </div>
@@ -124,8 +210,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="sobre" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="sobre" className="relative overflow-hidden py-20 bg-white">
+        <ElephantDecoration className="top-10 right-6 md:right-20 opacity-20" size={120} flip />
+        <ElephantDecoration className="bottom-10 left-4 md:left-16 opacity-15" size={95} />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 text-gray-900">
               Sobre la Doctora
@@ -239,12 +327,29 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+
+            <a
+              href="https://www.doctoranytime.gt/d/pediatra/luisa-perez"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex"
+            >
+              <Button className="bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg shadow-sm">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Ver perfil en Doctoranytime
+              </Button>
+            </a>
+
           </div>
         </div>
       </section>
 
-      <section id="servicios" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="servicios" className="relative overflow-hidden py-20 bg-gray-50">
+        <ElephantDecoration className="top-8 left-8 opacity-20" size={100} />
+        <ElephantDecoration className="top-1/2 right-4 md:right-12 opacity-15" size={130} flip />
+        <ElephantDecoration className="bottom-8 left-[45%] hidden lg:block opacity-10" size={90} />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 text-gray-900">
               Servicios Médicos
@@ -268,7 +373,8 @@ export default function HomePage() {
               const color = colors[index % colors.length];
 
               return (
-                <Card key={servicio.id} className={`bg-gradient-to-br ${color.bg} border ${color.border} shadow-sm hover:shadow-md transition-shadow`}>
+                <Card key={servicio.id} className={`relative overflow-hidden bg-gradient-to-br ${color.bg} border ${color.border} shadow-sm hover:shadow-md transition-shadow`}>
+                    <ElephantDecoration className="-top-6 -right-6 opacity-15" size={85} flip />
                   <CardHeader>
                     <div className={`w-12 h-12 ${color.icon} rounded-lg flex items-center justify-center mb-3`}>
                       <Stethoscope className={`h-6 w-6 ${color.iconColor}`} />
@@ -293,8 +399,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="sucursales" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="sucursales" className="relative overflow-hidden py-20 bg-white">
+        <ElephantDecoration className="top-10 right-8 opacity-20" size={110} flip />
+        <ElephantDecoration className="bottom-10 left-8 opacity-15" size={120} />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 text-gray-900">
               Nuestras Sucursales
@@ -313,8 +422,9 @@ export default function HomePage() {
               const borders = ['border-blue-200', 'border-pink-200'];
 
               return (
-                <Card key={sucursal.id} className={`bg-gradient-to-br ${gradients[index]} border ${borders[index]} shadow-sm hover:shadow-md transition-shadow`}>
-                  <CardHeader>
+                <Card key={sucursal.id} className={`relative overflow-hidden bg-gradient-to-br ${gradients[index]} border ${borders[index]} shadow-sm hover:shadow-md transition-shadow`}>
+                    <ElephantDecoration className="-bottom-8 -right-6 opacity-15" size={100} flip />
+                    <CardHeader className="relative z-10">
                     <CardTitle className="flex items-center text-xl font-semibold text-gray-800">
                       <div className="bg-white p-2 rounded-lg shadow-sm mr-3">
                         <MapPin className="h-6 w-6 text-blue-500" />
@@ -322,7 +432,7 @@ export default function HomePage() {
                       {sucursal.nombre}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="relative z-10 space-y-3">
                     <div className="flex items-start space-x-3 bg-white p-3 rounded-lg">
                       <MapPin className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                       <p className="text-gray-600 text-sm">{sucursal.direccion}</p>
@@ -356,8 +466,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="contacto" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="contacto" className="relative overflow-hidden py-20 bg-gray-50">
+          <ElephantDecoration className="top-8 left-8 opacity-20" size={100} />
+          <ElephantDecoration className="bottom-8 right-8 opacity-20" size={120} flip />
+          <ElephantDecoration className="top-1/2 left-1/2 hidden lg:block opacity-10" size={150} />
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 text-gray-900">
               Contáctenos
