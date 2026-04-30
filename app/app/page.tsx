@@ -273,8 +273,8 @@ export default function HomePage() {
               <p className="text-base text-gray-600 leading-relaxed">
                 Médica y cirujana  graduada de la  Universidad de San Carlos de Guatemala, cuento 
                 con una Maestría en Ciencias Médicas con Especialidad en Pediatría,  así como una 
-                especialidad en  Asesoría  de  Lactancia  Materna.   Cuento con más de 10 años de 
-                experiencia profesional en el cuidado de la salud de los más pequeñitos del hogar
+                especialidad en  Asesoría  de  Lactancia  Materna. Con más de 10 años de experiencia 
+                profesional en el cuidado de la salud de los más pequeñitos del hogar.
               </p>
 
               <div className="space-y-3">
